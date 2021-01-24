@@ -1,5 +1,5 @@
 name: kvs
-version: "1.0"
+version: "0.1.0"
 author: Shane M. <shanemoloneybusiness@gmail.com>
 about: key store db
 args:
@@ -22,7 +22,7 @@ args:
       help: Sets the input file to use
       required: false
       index: 3
-  - verbose:
+  - version:
       short: v
       multiple: true
-      help: Sets the level of verbosity
+      help: tells the version number
