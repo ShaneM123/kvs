@@ -1,15 +1,18 @@
+use std::collections::HashMap;
 
 pub struct KvStore{
-
+    //kv_db: HashMap<String, String>,
 }
 
 impl KvStore {
     pub fn new() -> KvStore {
         KvStore{
-
+           // kv_db: HashMap::new(),
         }
     }
-    pub fn set(&self, _key: String, _value: String)-> Option<String>{
+    pub fn set(&mut self, _key: String, _value: String) {
+       // self.kv_db.insert(key,value)
+        eprintln!("unimplemented");
         panic!()
     }
 

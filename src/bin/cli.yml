@@ -3,12 +3,25 @@ version: "1.0"
 author: Shane M. <shanemoloneybusiness@gmail.com>
 about: key store db
 args:
+#  - set:
+#      short: s
+#      long: set
+#      value_names: [KEY, VALUE]
+#      help: Sets key value pair
+#      takes_value: true
   - set:
-      short: s
-      long: set
-      value_names: [KEY, VALUE]
-      help: Sets key value pair
+      help: Sets the input file to use
+      required: false
+      index: 1
       takes_value: true
+  - KEY:
+      help: Sets the input file to use
+      required: false
+      index: 2
+  - VALUE:
+      help: Sets the input file to use
+      required: false
+      index: 3
   - verbose:
       short: v
       multiple: true
