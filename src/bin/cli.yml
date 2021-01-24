@@ -14,6 +14,11 @@ args:
       required: false
       index: 1
       takes_value: true
+  - get:
+      help: Sets the input file to use
+      required: false
+      index: 1
+      takes_value: true
   - KEY:
       help: Sets the input file to use
       required: false
