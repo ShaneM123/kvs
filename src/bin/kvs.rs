@@ -5,10 +5,9 @@ fn main() {
     let yaml = load_yaml!("cli.yml");
     let m = App::from(yaml).get_matches();
 
-    match m.value_of("arguement1") {
-        //
+    match m.value_of("set") {
         None => {}
-        Some(_) => { println!("it worked")}
+        Some(_) => { println!("got to here anyways") }
     }
     //
 
