@@ -12,22 +12,24 @@ args:
   - set:
       help: Sets the input file to use
       required: false
-      index: 1
       takes_value: true
+      multiple: true
   - get:
       help: Sets the input file to use
+      multiple: true
+      last: true
       required: false
-      index: 1
-      takes_value: true
-  - KEY:
-      help: Sets the input file to use
-      required: false
-      index: 2
-  - VALUE:
-      help: Sets the input file to use
-      required: false
-      index: 3
   - version:
       short: v
-      multiple: true
       help: tells the version number
+subcommands:
+  - KEY:
+      about: not sure
+      author: shane  <shane@other.com>
+      args:
+        - KEY:
+            help: Sets the input file to use
+            required: false
+        - VALUE:
+            help: Sets the input file to use
+            required: false

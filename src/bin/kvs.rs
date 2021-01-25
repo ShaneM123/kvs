@@ -22,6 +22,7 @@ fn main() {
             print!("{}",version);
         }
     }
+    panic!();
     //
 
 }

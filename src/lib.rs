@@ -10,17 +10,20 @@ impl KvStore {
             kv_db: HashMap::new(),
         }
     }
-    pub fn set(&mut self, key: String, value: String) -> Option<&String> {
+    pub fn set(&mut self, key: String, value: String) {
         self.kv_db.insert(key.clone(),value);
-        self.kv_db.get(&key)
     }
 
-    pub fn get(&self, key: String) -> Option<&String> {
-        self.kv_db.get(&key)
+    pub fn get(&self, key: String) -> Option<String> {
+        let result = self.kv_db.get(&key);
+        if  result.is_some(){
+        return Some((*result.unwrap().clone()).parse().unwrap());
+        }
+        None
     }
-    pub fn remove(&self, _key: String)-> Option<String>{
-        eprintln!("unimplemented");
-        panic!()
+    pub fn remove(&mut self, key: String) -> Option<String>{
+        self.kv_db.remove(&key);
+        self.get(key)
     }
 }
 
