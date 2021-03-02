@@ -22,11 +22,7 @@ impl KvStore {
     }
 
     pub fn get(&self, key: String) -> Option<String> {
-        let result = self.kv_db.get(&key);
-        if  result.is_some(){
-        return Some((*result.unwrap().clone()).parse().unwrap());
-        }
-        None
+        self.kv_db.get(&key).cloned()
     }
     pub fn remove(&mut self, key: String) -> Option<String>{
         self.kv_db.remove(&key);
