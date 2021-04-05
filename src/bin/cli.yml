@@ -2,34 +2,48 @@ name: kvs
 version: "0.1.0"
 author: Shane M. <shanemoloneybusiness@gmail.com>
 about: key store db
-args:
+#args:
+##  - set:
+##      short: s
+##      long: set
+##      value_names: [KEY, VALUE]
+##      help: Sets key value pair
+##      takes_value: true
 #  - set:
-#      short: s
-#      long: set
-#      value_names: [KEY, VALUE]
-#      help: Sets key value pair
+#      help: Sets the input file to use
+#      required: false
 #      takes_value: true
-  - set:
-      help: Sets the input file to use
-      required: false
-      takes_value: true
-      multiple: true
-  - get:
-      help: Sets the input file to use
-      multiple: true
-      last: true
-      required: false
-  - version:
-      short: v
-      help: tells the version number
+#      multiple: true
+#  - get:
+#      help: Sets the input file to use
+#      multiple: true
+#      last: true
+#      required: false
+#  - version:
+#      short: v
+#      help: tells the version number
 subcommands:
-  - KEY:
-      about: not sure
-      author: shane  <shane@other.com>
+  - set:
+      about: set db values
+      author: shane  <shanemoloneybusiness@gmail.com>
       args:
         - KEY:
             help: Sets the input file to use
-            required: false
+            required: true
         - VALUE:
             help: Sets the input file to use
-            required: false
+            required: true
+  - get:
+      about: get db values
+      author: shane  <shanemoloneybusiness@gmail.com>
+      args:
+        - KEY:
+            help: Sets the input file to use
+            required: true
+  - rm:
+      about: get db values
+      author: shane  <shanemoloneybusiness@gmail.com>
+      args:
+        - KEY:
+            help: Sets the input file to use
+            required: true

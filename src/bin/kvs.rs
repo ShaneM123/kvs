@@ -1,92 +1,76 @@
-//use clap::{load_yaml, App};
-//use kvs::KvStore;
+use clap::{load_yaml, App, AppSettings, Arg, SubCommand, ArgMatches};
+use kvs::{KvStore, KvsError, Result};
 use std::path::PathBuf;
-use structopt::StructOpt;
+use std::thread::panicking;
+use anyhow::Error;
+use std::process::exit;
 
-fn main() {
-    let opt =  Opt::from_args();
-   eprintln!("unimplemented");
-    panic!()
+fn main() -> Result<()> {
+    //the YAML file is found relative to the current file, similar to modules
+    let yaml = load_yaml!("cli.yml");
+    let m = App::from(yaml).get_matches();
+    let mut kv_store = KvStore::new();
 
-   //  //the YAML file is found relative to the current file, similar to modules
-   //  let yaml = load_yaml!("cli.yml");
-   //  let m = App::from(yaml).get_matches();
-   // // let kv_store = KvStore::new();
-   //  match m.value_of("set") {
-   //      None => {}
-   //      Some(_val) => {         eprintln!("unimplemented");
-   //          panic!() }
-   //  };
-   //  match m.value_of("get") {
-   //      None => {}
-   //      Some(_val) => {         eprintln!("unimplemented");
-   //          panic!() }
-   //  };
-   //  match m.value_of("v") {
-   //      None => {}
-   //      Some(_val) => {let version = env!("CARGO_PKG_VERSION");
-   //          print!("{}",version);
-   //      }
-   //  }
-   //  panic!();
-   //  //
+    match m.subcommand() {
+        ("get", Some(matches)) => {
+            let key = matches.value_of("KEY").expect("KEY argument missing");
+            let res  = kv_store.get(key.parse().unwrap()).unwrap();
+            if res.is_none(){
+                print!("Key not found");
+            }
+            Ok(())
+        },
+        ("set", Some(matches)) => {
+            let key = matches.value_of("KEY").expect("KEY argument missing");
+            let value = matches.value_of("VALUE").expect("VALUE argument missing");
+            Ok(())
 
-}
+        },
+        ("rm", Some(matches)) => {
+            let key = matches.value_of("KEY").expect("KEY argument missing");
+           let res =  match kv_store.remove(key.parse().unwrap())
+           {
+               Ok(val) => {val }
+               Err(KvsError::KeyNotFound) => {
+                       println!("Key not found");
+                       exit(1);
+               },
+               Err(e) => {
+                   return Err(e)
+               }
+           };
+
+            if res.is_none() {
+
+            };
+            Ok(())
+        },
 
 
+        _ => { panic!("no args")}
+    }
+    // match m.value_of("set") {
+    //     None => {}
+    //     Some(_val) => {
+    //     }
+    // };
+    // match m.value_of("get") {
+    //     None => { panic!("no val")}
+    //     Some(val) => {
+    //        match kv_store.get(val.parse().unwrap()).unwrap() {
+    //            None => print!("key not found"),
+    //            Some(val) => {}
+    //        }
+    //     }
+    // };
+    // match m.value_of("v") {
+    //     None => {}
+    //     Some(_val) => {let version = env!("CARGO_PKG_VERSION");
+    //         print!("{}",version);
+    //     }
+    // }
+    //
 
-// /// A basic example
-// #[derive(StructOpt)]
-// struct Opt {
-//     // // A flag, true if used in the command line. Note doc comment will
-//     // // be used for the help message of the flag. The name of the
-//     // // argument will be, by default, based on the name of the field.
-//     // /// Activate debug mode
-//     // #[structopt(short, long)]
-//     // debug: bool,
-//     //
-//     // // The number of occurrences of the `v/verbose` flag
-//     // /// Verbose mode (-v, -vv, -vvv, etc.)
-//     // #[structopt(short, long, parse(from_occurrences))]
-//     // verbose: u8,
-//
-//     #[structopt(flatten)]
-//     Command(Command),
-//     Value {
-// arg2: String,
-// }
-// }
-//
-// #[derive(StructOpt)]
-// enum Command {
-//     Key {
-//         arg1: String,
-//     }
-// }
+    }
 
-#[derive(StructOpt)]
-enum Opt {
-    #[structopt(flatten)]
-    Get(Command),
-
-    #[structopt(flatten)]
-    Set(Command),
-
-    #[structopt(flatten)]
-    Rm(Command),
-
-}
-#[derive(StructOpt)]
-enum Command {
-    Get {
-        arg1: String,
-    },
-    Set {
-        arg1: String,
-        arg2: String,
-    },
-    Rm{
-        arg1: String,
-    },
-}
 

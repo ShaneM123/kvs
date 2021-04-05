@@ -1,13 +1,27 @@
 use std::collections::HashMap;
 use std::path;
-use thiserror::Error;
+use std::fmt::Formatter;
 
-
-#[derive(Error, Debug)]
+/// WordCountError enumerates all possible errors returned by this library.
+#[derive(Debug, Clone)]
 pub enum KvsError {
-    #[error("unknown data store error")]
     Unknown,
+    KeyNotFound,
 }
+
+impl std::fmt::Display for KvsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            KvsError::Unknown => {
+                write!(f, "Unknown Error")
+            },
+            KvsError::KeyNotFound => {
+                write!(f, "Key not found")
+            }
+        }
+    }
+}
+
 pub type Result<T> = std::result::Result<T,KvsError>;
 
 pub struct KvStore {
@@ -40,12 +54,16 @@ impl KvStore {
     }
 
     pub fn get(&self, key: String) -> Result<Option<String>> {
-        Ok(self.kv_db.get(&key).cloned())
-
+        let value = self.kv_db.get(&key).cloned();
+        Ok(value)
     }
     pub fn remove(&mut self, key: String) -> Result<Option<String>> {
-        self.kv_db.remove(&key);
-        self.get(key)
+        let val = self.kv_db.get(&key).cloned();
+        if val.is_some() {
+            let res = self.kv_db.remove(&key);
+            Ok(res)
+        }
+        else { return Err(KvsError::KeyNotFound)}
     }
 
 }
