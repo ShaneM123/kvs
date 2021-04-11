@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use std::path;
 use std::fs;
 use std::fmt::Formatter;
-use std::fs::OpenOptions;
+use std::fs::{OpenOptions, File};
 use std::path::Path;
-use std::io::Write;
+use std::io::{Write, BufReader};
+use serde_json;
+use serde::{Serialize,Deserialize};
+use std::env::{set_current_dir, join_paths};
 
-/// WordCountError enumerates all possible errors returned by this library.
 #[derive(Debug, Clone)]
 pub enum KvsError {
     Unknown,
@@ -39,7 +41,30 @@ impl Default for KvStore {
         Self::new()
     }
 }
+#[derive(Serialize, Deserialize, Debug)]
+pub struct KvsCommand {
+    command: CmdType,
+    key: String,
+    value: Option<String>,
+}
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub enum CmdType {
+    Set,
+    Get,
+    Rm,
+}
 
+pub fn read_kvscommands_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<KvsCommand>> {
+    // Open the file in read-only mode with buffer.
+    let file = File::open(path).unwrap();
+    let reader = BufReader::new(file);
+
+    // Read the JSON contents of the file as an instance of `kvscmd`.
+    let kvscmd = serde_json::from_reader(reader).unwrap();
+
+    // Return the `kvscmd`.
+    Ok(kvscmd)
+}
 
 impl KvStore {
     pub fn new() -> KvStore{
@@ -54,26 +79,53 @@ impl KvStore {
             path: path.to_str().unwrap().parse().unwrap()
         }
     }
-    // fn open_existing_file_or_create(path: &PathBuf) -> File {
-    //     fs::create_dir_all(path.parent().unwrap());
-    //
-    //     OpenOptions::new()
-    //         .append(true)
-    //         .create(true)
-    //         .read(true)
-    //         .open(path)
-    //         .expect("could not append file")
-    // }
-    pub fn open(path: &path::Path) -> Result<KvStore> {
-        fs::create_dir_all(&path);
+    pub fn with_old_path(path: &path::Path) -> KvStore{
+        let deserialised = read_kvscommands_from_file(path).unwrap();
+       // let deserialised = serde_json::from_slice::<Vec<KvsCommand>>(&x).unwrap();
+        let mut kv_db:HashMap<String,String> = HashMap::new();
+        for x in deserialised {
+            if x.command== CmdType::Set{
+                kv_db.insert(x.key,x.value.unwrap());
+            }
+        }
+        //run the log of db commands.
 
-        return Result::Ok(KvStore::new_with_path(path))
+        KvStore{
+            kv_db,
+            path: path.to_str().unwrap().parse().unwrap()
+        }
     }
 
+
+    pub fn open(path: &path::Path) -> Result<KvStore> {
+        if path.exists(){
+            println!("path exists {:?}", path);
+
+            let the_path = Path::new(&path).join("dbcmds.txt");
+             println!("The full path on exists line  {:?}", the_path);
+             let  db_file = fs::File::create(the_path.clone()).unwrap();
+            return Result::Ok(KvStore::with_old_path(the_path.as_path()));
+        }
+        fs::create_dir_all(&path);
+        let the_path = Path::new(&path).join("dbcmds.txt");
+        let  db_file = fs::File::create(the_path.clone()).unwrap();
+        println!("The full path brand new {:?}", the_path);
+        return Result::Ok(KvStore::new_with_path(the_path.as_path()))
+    }
+
+
     pub fn set(&mut self, key: String, value: String) -> Result<bool> {
-        self.kv_db.insert(key.clone(),value);
+        self.kv_db.insert(key.clone(), value.clone());
+        let set_command = KvsCommand{
+            command: CmdType::Set,
+            key,
+            value: Option::from(value),
+        };
+        let formatted = serde_json::to_string(&set_command).unwrap();
+
         let mut file = fs::File::open(&self.path).unwrap();
-        file.write(self.kv_db.get(&key).unwrap().as_bytes());
+
+        file.write(formatted.as_ref());
         Ok(true)
     }
 
