@@ -150,6 +150,11 @@ impl KvStore {
             return Ok(true);
         }
         let mut kvscmd: Vec<KvsCommand> = serde_json::from_str(&buffy).unwrap();
+        let mut kvscmd = kvscmd
+            .into_iter()
+            .filter(|x|  if x.command.eq(&CmdType::Set) && x.key.contains(&set_command.key) {false}else {true})
+            .map(|x| x)
+        .collect::<Vec<KvsCommand>>();
 
         kvscmd.push(set_command);
 
