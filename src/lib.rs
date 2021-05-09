@@ -8,6 +8,8 @@ use std::io::{Write, BufReader, BufWriter, Read};
 use serde_json;
 use serde::{Serialize,Deserialize};
 use std::env::{set_current_dir, join_paths};
+use std::io::{prelude::*, Seek, SeekFrom};
+
 
 #[derive(Debug, Clone)]
 pub enum KvsError {
@@ -80,11 +82,12 @@ impl KvStore {
     }
     pub fn with_old_path(path: &path::Path) -> KvStore{
         println!("read commands with old path");
-        let file = OpenOptions::new()
+        let mut file = OpenOptions::new()
             .read(true)
-            .append(true)
+            .write(true)
             .open(&path)
             .expect("Unable to open file");
+        file.seek(SeekFrom::Start(0)).unwrap();
 
         let reader = BufReader::new(&file);
 
@@ -144,25 +147,27 @@ impl KvStore {
 
         let mut file = OpenOptions::new()
             .read(true)
-            .append(true)
+            .write(true)
             .open(&self.path)
             .expect("Unable to open file");
         let mut buffy = String::new();
        file.read_to_string(&mut buffy);
-
         let reader = BufReader::new(&file);
         // Read the JSON contents of the file as an instance of `kvscmd`
+        file.seek(SeekFrom::Start(0)).unwrap();
+
         if file.metadata().unwrap().len() <=0
         {
             println!("failed to unwrap, creating new vector");
-            let mut x = Vec::new(); x.push(set_command);
+            let mut x = Vec::new();
+            x.push(set_command);
             let mut file = BufWriter::new(&file);
             let formatted_vec = serde_json::to_string(&x).unwrap();
             println!("formatted vec: {}", formatted_vec);
             file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
             return Ok(true);
         }
-
+        println!("buffy:{}", buffy);
         let mut kvscmd: Vec<KvsCommand> =  serde_json::from_str(&buffy).unwrap();
 
         kvscmd.push(set_command);
