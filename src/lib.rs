@@ -43,13 +43,13 @@ impl Default for KvStore {
         Self::new()
     }
 }
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug,Ord, PartialOrd, Eq, PartialEq)]
 pub struct KvsCommand {
     command: CmdType,
     key: String,
     value: Option<String>,
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Ord, PartialOrd, Eq)]
 pub enum CmdType {
     Set,
     Get,
@@ -70,7 +70,6 @@ impl KvStore {
         }
     }
     pub fn with_old_path(path: &path::Path) -> KvStore {
-        //    println!("read commands with old path");
         let mut file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -91,7 +90,6 @@ impl KvStore {
             }
         }
         //run the log of db commands.
-
         KvStore {
             kv_db,
             path: path.to_str().unwrap().parse().unwrap()
@@ -101,18 +99,12 @@ impl KvStore {
 
     pub fn open(path: &path::Path) -> Result<KvStore> {
         if path.exists() {
-            //  println!("path exists {:?}", path);
-
             let the_path = Path::new(&path).join("dbcmds.txt");
-            //   println!("The full path on exists line  {:?}", the_path);
-            if the_path.is_file() {
-                //    println!("file exists, using it");
-
-                return Result::Ok(KvStore::with_old_path(the_path.as_path()));
+            return if the_path.is_file() {
+                Result::Ok(KvStore::with_old_path(the_path.as_path()))
             } else {
-                //    println!("file doesnt exist, making it so");
-                let db_file = fs::File::create(the_path.clone()).unwrap();
-                return Result::Ok(KvStore::new_with_path(the_path.as_path()));
+                fs::File::create(the_path.clone()).unwrap();
+                Result::Ok(KvStore::new_with_path(the_path.as_path()))
             }
         }
         fs::create_dir_all(&path);
@@ -150,9 +142,14 @@ impl KvStore {
             return Ok(true);
         }
         let mut kvscmd: Vec<KvsCommand> = serde_json::from_str(&buffy).unwrap();
+
+        kvscmd.sort();
+
         let mut kvscmd = kvscmd
             .into_iter()
-            .filter(|x|  if x.command.eq(&CmdType::Set) && x.key.contains(&set_command.key) {false}else {true})
+            .filter(|x|
+                if x.key.eq(&set_command.key)
+                {false} else {true})
             .map(|x| x)
         .collect::<Vec<KvsCommand>>();
 
