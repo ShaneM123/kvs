@@ -10,6 +10,9 @@ use serde::{Serialize,Deserialize};
 use std::env::{set_current_dir, join_paths};
 use std::io::{prelude::*, Seek, SeekFrom};
 
+pub struct KvsEngine{
+    nothing: String,
+}
 
 #[derive(Debug, Clone)]
 pub enum KvsError {

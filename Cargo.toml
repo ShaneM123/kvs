@@ -14,11 +14,17 @@ thiserror = "1.0"
 anyhow = "1.0"
 serde = {version="1.0.125", features = ["derive"] }
 serde_json="1.0.64"
+slog = {version="2.7.0"}
+slog-term = "2.8.0"
+slog-async = "2.6.0"
+chrono = "0.4.19"
 [dev-dependencies]
 assert_cmd = "1.0.2"
 predicates = "1.0.6"
 tempfile = "3.0.7"
 walkdir = "2.2.7"
+criterion = "0.2.11"
+rand = "0.6.5"
 
 [lib]
 name = "kvs"
@@ -27,5 +33,10 @@ doctest = false
 
 [[bin]]
 name = "kvs"
+test = false
+doctest = false
+
+[[bin]]
+name = "kvs-server"
 test = false
 doctest = false
