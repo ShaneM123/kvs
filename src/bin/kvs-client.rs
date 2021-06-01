@@ -1,10 +1,12 @@
 
 use clap::{App, Arg, SubCommand};
 use std::env::{args, Args};
+use std::net::TcpStream;
+use std::io::Error;
 
 pub fn main() {
     let matches = App::new("kvs-client")
-        .version("1")
+        .version("0.1.0")
         .author("Shane Moloney shanemoloneybusiness@gmail.com")
         .about("a db server following pingcap talent plan")
         .subcommands(vec![
@@ -23,16 +25,12 @@ pub fn main() {
                 .takes_value(true)
         )
         .get_matches();
-
-    // .arg(Arg::with_name("Engine")
-    //     .long("engine")
-    //     .value_name("ENGINE-NAME")
-    //     .help("ENGINE-NAME must be either kvs or sled")
-    //     .takes_value(true)
-    // )
-    // .arg(Arg::with_name("Version")
-    //     .short("V")
-    //     .long("version")
-    //     .help("prints the version")
-    // )
+    let address = matches.value_of("addr").unwrap();
+    let stream = TcpStream::connect(address);
+    match stream {
+        Ok(val) => { println!("connected to server ")}
+        Err(e) => {
+            eprintln!("couldnt connect to server tcp stream");
+        }
+    }
 }
