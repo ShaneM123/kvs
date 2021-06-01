@@ -37,7 +37,7 @@ pub fn main(){
 
    info!(root_logger, "App Ended"; "version" => env!("CARGO_PKG_VERSION"), "Engine" => engine, "address" => ip_addr );
 
-    let listener = TcpListener::bind("127.0.0.1:80").unwrap();
+    let listener = TcpListener::bind(ip_addr).unwrap();
 
     for stream in listener.incoming() {
         match stream {
