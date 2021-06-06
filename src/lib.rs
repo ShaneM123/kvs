@@ -1,3 +1,6 @@
+//TODO: figure out a mbetter way to mod, prob shouldnt go through lib.rs
+pub mod shared;
+
 use std::collections::HashMap;
 use std::path;
 use std::fs;

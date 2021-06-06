@@ -4,6 +4,7 @@ use std::env::{args, Args};
 use std::net::TcpStream;
 use std::io::{Error as IOError, Write,ErrorKind};
 use serde::Serialize;
+use kvs::shared::messaging::{SetStream, GetStream};
 
 
 #[derive(Debug, Clone)]
@@ -76,7 +77,7 @@ pub fn main() -> Result<'static,()> {
             };
             //TODO: figure out TCP Streams in rust
             //TODO: Stop duplicating the code, too verbose
-            let data = GetStream{ cmd: "get", key: key };
+            let data = SetStream{ cmd: "get", key, value: "" };
             let  buf_json = serde_json::to_vec(&data).unwrap();
             let bytes_written=  stream.write(&buf_json).unwrap();
             if bytes_written < buf_json.len() {
@@ -85,6 +86,7 @@ pub fn main() -> Result<'static,()> {
                 eprintln!("{}", x);
                 panic!();
             }
+            stream.flush().unwrap();
         }
         Some(val) => {
             let sub_cmd = matches.subcommand_matches("set").unwrap();
@@ -105,20 +107,15 @@ pub fn main() -> Result<'static,()> {
 
             let buf = SetStream{ cmd: "set", key, value };
             let  buf_json = serde_json::to_vec(&buf).unwrap();
-            stream.write(&buf_json);
+            let bytes_written=  stream.write(&buf_json).unwrap();
+            if bytes_written < buf_json.len() {
+                //TODO: improve error handling
+                let x = &format!("Sent {}/{} bytes", bytes_written, buf_json.len());
+                eprintln!("{}", x);
+                panic!();
+            }
+            stream.flush().unwrap();
         }
     };
     return Ok(())
-}
-#[derive(Serialize)]
-pub struct GetStream <'a,'b> {
-    pub cmd: &'a str,
-    pub key: &'b str,
-}
-
-#[derive(Serialize)]
-pub struct SetStream <'a,'b, 'c> {
-    pub cmd: &'a str,
-    pub key: &'c str,
-    pub value: &'b str,
 }

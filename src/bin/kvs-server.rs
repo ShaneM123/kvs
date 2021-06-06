@@ -3,6 +3,8 @@ use slog::{info, o, Drain};
 use slog_term;
 use chrono;
 use std::net::TcpListener;
+use std::io::{Read, BufReader, BufRead};
+use kvs::shared::messaging::SetStream;
 
 pub fn main(){
     let decorator = slog_term::TermDecorator::new().build();
@@ -41,8 +43,12 @@ pub fn main(){
 
     for stream in listener.incoming() {
         match stream {
-            Ok(stream) => {
+            Ok(mut stream) => {
                 println!("new client!");
+               let mut reader = BufReader::new(&mut stream);
+                let received: Vec<u8> = reader.fill_buf().unwrap().to_vec();
+                let deserialized = serde_json::from_slice::<SetStream>(&received).unwrap();
+                reader.consume(received.len());
             }
             Err(e) => {
                 eprintln!("connection failed");
