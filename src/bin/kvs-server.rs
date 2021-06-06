@@ -46,6 +46,7 @@ pub fn main(){
             }
             Err(e) => {
                 eprintln!("connection failed");
+                panic!();
             }
         }
     }
