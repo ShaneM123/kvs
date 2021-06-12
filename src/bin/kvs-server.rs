@@ -3,8 +3,11 @@ use slog::{info, o, Drain};
 use slog_term;
 use chrono;
 use std::net::TcpListener;
-use std::io::{Read, BufReader, BufRead};
+use std::io::{Read, BufReader, BufRead, Error, Write};
 use kvs::shared::messaging::SetStream;
+use std::io;
+use kvs::KvStore;
+use std::env::temp_dir;
 
 pub fn main(){
     let decorator = slog_term::TermDecorator::new().build();
@@ -44,11 +47,54 @@ pub fn main(){
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                println!("new client!");
-               let mut reader = BufReader::new(&mut stream);
+             //   println!("new client!");
+                let temp_dir = std::path::Path::new("tmp/foo2.txt").file_name().unwrap();
+                let mut store = KvStore::open(temp_dir.as_ref()).unwrap();
+
+                let mut reader = BufReader::new(&mut stream);
                 let received: Vec<u8> = reader.fill_buf().unwrap().to_vec();
                 let deserialized = serde_json::from_slice::<SetStream>(&received).unwrap();
-                reader.consume(received.len());
+            //    println!("DESERIALIZED:  {:?}", deserialized);
+                let x =  reader.consume(received.len());
+
+                if deserialized.cmd.eq("set") {
+                    let x = store.set(deserialized.key.into(), deserialized.value.into()).unwrap();
+                }
+                if deserialized.cmd.eq("get") {
+                    let data = match store.get(deserialized.key.into()).unwrap()
+                    {
+                        None => {"Key not found".to_owned()}
+                        Some(val) => {val}
+                    };
+                    let  buf_json = data.as_ref();
+                    let bytes_written=  stream.write(buf_json).unwrap();
+                    if bytes_written < buf_json.len() {
+                        //TODO: improve error handling
+                        let x = &format!("Sent {}/{} bytes", bytes_written, buf_json.len());
+                        eprintln!("{}", x);
+                        panic!();
+                    }
+                }
+
+                if deserialized.cmd.eq("rm") {
+                    let x = match store.remove(deserialized.key.into())
+                    {
+                        Err(..) => {
+                            let  buf_json = "Key not found".as_ref();
+                            let bytes_written=  stream.write(buf_json).unwrap();
+                            if bytes_written < buf_json.len() {
+                                //TODO: improve error handling
+                                let x = &format!("Sent {}/{} bytes", bytes_written, buf_json.len());
+                                eprintln!("{}", x);
+                                panic!();
+                            }
+                        }
+                        Ok(()) => {}
+                    };
+
+                }
+
+
             }
             Err(e) => {
                 eprintln!("connection failed");
