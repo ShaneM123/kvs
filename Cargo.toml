@@ -23,7 +23,7 @@ assert_cmd = "1.0.2"
 predicates = "1.0.6"
 tempfile = "3.0.7"
 walkdir = "2.2.7"
-criterion = "0.2.11"
+criterion = "0.3.4"
 rand = "0.6.5"
 
 [lib]

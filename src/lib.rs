@@ -13,8 +13,10 @@ use serde::{Serialize,Deserialize};
 use std::env::{set_current_dir, join_paths};
 use std::io::{prelude::*, Seek, SeekFrom};
 
-pub struct KvsEngine{
-    nothing: String,
+pub trait KvsEngine{
+    fn get(&self, key: String) -> Result<Option<String>> ;
+    fn set(&mut self, key: String, value: String) -> Result<bool>;
+    fn remove(&mut self, key: String)-> Result<()> ;
 }
 
 #[derive(Debug, Clone)]
@@ -60,6 +62,104 @@ pub enum CmdType {
     Set,
     Get,
     Rm,
+}
+
+impl KvsEngine for KvStore {
+    fn get(&self, key: String) -> Result<Option<String>>{
+        let value = self.kv_db.get(&key).cloned();
+        Ok(value)
+    }
+
+    fn set(&mut self, key: String, value: String) -> Result<bool> {
+        self.kv_db.insert(key.clone(), value.clone());
+        let set_command = KvsCommand {
+            command: CmdType::Set,
+            key,
+            value: Option::from(value),
+        };
+
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&self.path)
+            .expect("Unable to open file");
+        let mut buffy = String::new();
+        file.read_to_string(&mut buffy);
+        file.seek(SeekFrom::Start(0)).unwrap();
+
+        if file.metadata().unwrap().len() <= 0
+        {
+            let mut x = Vec::new();
+            x.push(set_command);
+            let mut file = BufWriter::new(&file);
+            let formatted_vec = serde_json::to_string(&x).unwrap();
+            file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
+            return Ok(true);
+        }
+        let mut kvscmd: Vec<KvsCommand> = serde_json::from_str(&buffy).unwrap();
+
+        kvscmd.sort();
+
+        let mut kvscmd = kvscmd
+            .into_iter()
+            .filter(|x|
+                if x.key.eq(&set_command.key)
+                {false} else {true})
+            .map(|x| x)
+            .collect::<Vec<KvsCommand>>();
+
+        kvscmd.push(set_command);
+
+        let mut file = BufWriter::new(&file);
+
+        let formatted_vec = serde_json::to_string(&kvscmd).unwrap();
+
+        file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
+
+        Ok(true)
+    }
+
+    fn remove(&mut self, key: String)  -> Result<()> {
+        let val = self.kv_db.get(&key).cloned();
+        if val.is_some() {
+            self.kv_db.remove_entry(&key);
+        }
+        else
+        { return Err(KvsError::KeyNotFound) }
+
+        let rm_command = KvsCommand {
+            command: CmdType::Rm,
+            key,
+            value: None,
+        };
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&self.path)
+            .expect("Unable to open file");
+        let mut buffy = String::new();
+        file.read_to_string(&mut buffy);
+        file.seek(SeekFrom::Start(0)).unwrap();
+        if file.metadata().unwrap().len() <= 0
+
+        {
+            let mut x = Vec::new();
+            x.push(rm_command);
+            let mut file = BufWriter::new(&file);
+            let formatted_vec = serde_json::to_string(&x).unwrap();
+            file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
+            return Ok(());
+        }
+        let mut kvscmd: Vec<KvsCommand> = serde_json::from_str(&buffy).unwrap();
+        kvscmd.push(rm_command);
+
+        let mut file = BufWriter::new(&file);
+
+        let formatted_vec = serde_json::to_string(&kvscmd).unwrap();
+
+        file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
+        Ok(())
+    }
 }
 
 impl KvStore {
@@ -119,7 +219,7 @@ impl KvStore {
         //  println!("The full path brand new {:?}", the_path);
         return Result::Ok(KvStore::new_with_path(the_path.as_path()))
     }
-
+/*
 
     pub fn set(&mut self, key: String, value: String) -> Result<bool> {
         self.kv_db.insert(key.clone(), value.clone());
@@ -214,7 +314,7 @@ impl KvStore {
 
         file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
         Ok(())
-    }
+    }*/
 
 }
 

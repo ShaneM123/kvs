@@ -1,5 +1,5 @@
 use clap::{load_yaml, App, AppSettings, Arg, SubCommand, ArgMatches};
-use kvs::{KvStore, KvsError, Result};
+use kvs::{KvStore, KvsError, Result, KvsEngine};
 use std::path::PathBuf;
 use std::thread::panicking;
 use anyhow::Error;

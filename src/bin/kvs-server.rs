@@ -6,7 +6,7 @@ use std::net::TcpListener;
 use std::io::{Read, BufReader, BufRead, Error, Write};
 use kvs::shared::messaging::SetStream;
 use std::io;
-use kvs::KvStore;
+use kvs::{KvStore, KvsEngine};
 use std::env::temp_dir;
 
 pub fn main(){
