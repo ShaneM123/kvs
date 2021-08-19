@@ -4,7 +4,6 @@ pub mod shared;
 use std::collections::HashMap;
 use std::path;
 use std::fs;
-use std::fmt::Formatter;
 use std::fs::{OpenOptions, File};
 use std::path::Path;
 use std::io::{Write, BufReader, BufWriter, Read};
