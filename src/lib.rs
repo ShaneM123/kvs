@@ -12,12 +12,8 @@ use serde_json;
 use serde::{Serialize,Deserialize};
 use std::env::{set_current_dir, join_paths};
 use std::io::{prelude::*, Seek, SeekFrom};
+use sled;
 
-pub trait KvsEngine{
-    fn get(&self, key: String) -> Result<Option<String>> ;
-    fn set(&mut self, key: String, value: String) -> Result<bool>;
-    fn remove(&mut self, key: String)-> Result<()> ;
-}
 
 #[derive(Debug, Clone)]
 pub enum KvsError {
@@ -35,6 +31,62 @@ impl std::fmt::Display for KvsError {
                 write!(f, "Key not found")
             }
         }
+    }
+}
+
+pub trait KvsEngine{
+    fn get(&self, key: String) -> Result<Option<String>> ;
+    fn set(&mut self, key: String, value: String) -> Result<bool>;
+    fn remove(&mut self, key: String)-> Result<()> ;
+}
+
+pub struct SledKvsEngine{
+    pub sled_db: sled::Db,
+    path: String,
+}
+
+impl SledKvsEngine{
+    pub fn new() -> SledKvsEngine {
+        SledKvsEngine {
+            sled_db: sled::open("my_db").unwrap(),
+            path: "my_db".to_string(),
+        }
+    }
+    pub fn open(path: &path::Path) -> Result<SledKvsEngine> {
+                let sled_kvs_engine = SledKvsEngine {
+                    sled_db: sled::open(path).unwrap(),
+                    path: String::from(path.to_str().unwrap()),
+                };
+                Result::Ok(sled_kvs_engine)
+            }
+}
+//TODO: improve error handling
+impl KvsEngine for SledKvsEngine{
+    fn get(&self, key: String) -> Result<Option<String>> {
+       let x =  self.sled_db.get(key).unwrap();
+        //TODO: fix
+       Ok(Some(String::from_utf8_lossy(&x.unwrap()).parse().unwrap()))
+    }
+
+    fn set(&mut self, key: String, value: String) -> Result<bool> {
+        let x = self.sled_db.insert(key.as_bytes(), value.as_bytes()).unwrap();
+        Ok(x.is_some())
+    }
+
+    fn remove(&mut self, key: String) -> Result<()> {
+        let x = self.sled_db.remove(key).unwrap();
+     return   if x.is_some() {
+            Ok(())
+        }
+        else {
+            Err(KvsError::Unknown)
+        }
+    }
+}
+
+impl Default for SledKvsEngine {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -219,102 +271,6 @@ impl KvStore {
         //  println!("The full path brand new {:?}", the_path);
         return Result::Ok(KvStore::new_with_path(the_path.as_path()))
     }
-/*
-
-    pub fn set(&mut self, key: String, value: String) -> Result<bool> {
-        self.kv_db.insert(key.clone(), value.clone());
-        let set_command = KvsCommand {
-            command: CmdType::Set,
-            key,
-            value: Option::from(value),
-        };
-
-        let mut file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&self.path)
-            .expect("Unable to open file");
-        let mut buffy = String::new();
-        file.read_to_string(&mut buffy);
-        file.seek(SeekFrom::Start(0)).unwrap();
-
-        if file.metadata().unwrap().len() <= 0
-        {
-            let mut x = Vec::new();
-            x.push(set_command);
-            let mut file = BufWriter::new(&file);
-            let formatted_vec = serde_json::to_string(&x).unwrap();
-            file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
-            return Ok(true);
-        }
-        let mut kvscmd: Vec<KvsCommand> = serde_json::from_str(&buffy).unwrap();
-
-        kvscmd.sort();
-
-        let mut kvscmd = kvscmd
-            .into_iter()
-            .filter(|x|
-                if x.key.eq(&set_command.key)
-                {false} else {true})
-            .map(|x| x)
-        .collect::<Vec<KvsCommand>>();
-
-        kvscmd.push(set_command);
-
-        let mut file = BufWriter::new(&file);
-
-        let formatted_vec = serde_json::to_string(&kvscmd).unwrap();
-
-        file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
-
-        Ok(true)
-    }
-
-    pub fn get(&self, key: String) -> Result<Option<String>> {
-        let value = self.kv_db.get(&key).cloned();
-        Ok(value)
-    }
-    pub fn remove(&mut self, key: String) -> Result<()> {
-        let val = self.kv_db.get(&key).cloned();
-        if val.is_some() {
-            self.kv_db.remove_entry(&key);
-        }
-        else
-        { return Err(KvsError::KeyNotFound) }
-
-        let rm_command = KvsCommand {
-            command: CmdType::Rm,
-            key,
-            value: None,
-        };
-        let mut file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&self.path)
-            .expect("Unable to open file");
-        let mut buffy = String::new();
-        file.read_to_string(&mut buffy);
-        file.seek(SeekFrom::Start(0)).unwrap();
-        if file.metadata().unwrap().len() <= 0
-
-        {
-            let mut x = Vec::new();
-            x.push(rm_command);
-            let mut file = BufWriter::new(&file);
-            let formatted_vec = serde_json::to_string(&x).unwrap();
-            file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
-            return Ok(());
-        }
-        let mut kvscmd: Vec<KvsCommand> = serde_json::from_str(&buffy).unwrap();
-        kvscmd.push(rm_command);
-
-        let mut file = BufWriter::new(&file);
-
-        let formatted_vec = serde_json::to_string(&kvscmd).unwrap();
-
-        file.write_all(formatted_vec.as_bytes()).expect("Unable to write data");
-        Ok(())
-    }*/
 
 }
 

@@ -6,9 +6,17 @@ use std::net::TcpListener;
 use std::io::{Read, BufReader, BufRead, Error, Write};
 use kvs::shared::messaging::SetStream;
 use std::io;
-use kvs::{KvStore, KvsEngine};
+use kvs::{KvStore, KvsEngine, SledKvsEngine};
 use std::env::temp_dir;
 
+//TODO: improve with less gammy solution
+pub fn engine_func<T>(typ: &str)-> Result<T, E>{
+    return if typ.contains("kvs") {
+        Ok(KvStore::open(temp_dir.as_ref()).unwrap())
+    } else {
+        Ok(SledKvsEngine::open(temp_dir.as_ref()).unwrap())
+    };
+}
 pub fn main(){
     let decorator = slog_term::TermDecorator::new().build();
     let drain = slog_term::CompactFormat::new(decorator).build().fuse();
@@ -49,7 +57,7 @@ pub fn main(){
             Ok(mut stream) => {
              //   println!("new client!");
                 let temp_dir = std::path::Path::new("tmp/foo2.txt").file_name().unwrap();
-                let mut store = KvStore::open(temp_dir.as_ref()).unwrap();
+                let mut store = engine_func(engine).unwrap();
 
                 let mut reader = BufReader::new(&mut stream);
                 let received: Vec<u8> = reader.fill_buf().unwrap().to_vec();
